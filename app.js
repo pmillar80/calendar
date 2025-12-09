@@ -38,10 +38,19 @@ const renderCalendar = (startDate) => {
   const weekTitle = formatWeekTitle(weekStart);
 
   // Update week title
-  document.getElementById('current-week').innerText = `Week of: ${weekTitle}`;
+  const currentWeekTitle = document.getElementById('current-week');
+  if (currentWeekTitle) {
+    currentWeekTitle.innerText = `Week of: ${weekTitle}`;
+  }
+
+  // Get calendar container and ensure it exists
+  const calendarContainer = document.getElementById('calendar');
+  if (!calendarContainer) {
+    console.error('Calendar container not found');
+    return;
+  }
 
   // Clear existing calendar content
-  const calendarContainer = document.getElementById('calendar');
   calendarContainer.innerHTML = '';
 
   // Render the calendar grid
