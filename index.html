@@ -6,20 +6,24 @@
   <title>Handwritten Weekly Calendar</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-firestore.js"></script>
 </head>
 <body>
   <div id="app">
     <header>
       <h1>Weekly Planner</h1>
-      <div id="week-days">
-        <!-- Days of the week will be dynamically rendered here -->
+      <div id="week-navigation">
+        <button id="prev-week-btn">← Previous</button>
+        <span id="current-week">Week of: </span>
+        <button id="next-week-btn">Next →</button>
       </div>
     </header>
-    <div id="calendar">
-      <!-- Each day's hourly slots will be rendered here -->
-    </div>
+    <div id="calendar"></div>
     <button id="save-btn">Save Notes</button>
   </div>
   <script src="app.js"></script>
+  <script src="service-worker.js"></script>
 </body>
 </html>
