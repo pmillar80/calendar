@@ -1,0 +1,38 @@
+body {
+  font-family: Arial, sans-serif;
+}
+
+#week-days {
+  display: flex;
+  justify-content: space-around;
+  margin: 10px 0;
+}
+
+.day {
+  font-weight: bold;
+}
+
+#calendar {
+  display: flex;
+  justify-content: space-around;
+}
+
+.day-column {
+  display: flex;
+  flex-direction: column;
+  width: 80px;
+}
+
+.time-slot {
+  border-bottom: 1px solid #ccc;
+  height: 50px;
+  position: relative;
+}
+
+.note-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
