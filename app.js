@@ -1,114 +1,197 @@
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+console.log("app.js loaded");
 
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore(app);
+// --- Canvas Handwriting Functions ---
+const canvas = document.getElementById("handwriting-canvas");
+const ctx = canvas.getContext("2d");
+let drawing = false;
+let lastX = 0;
+let lastY = 0;
+let penColor = "#000";
+let penSize = 2;
+let erasing = false;
 
-const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const hours = Array.from({ length: 14 }, (_, i) => `${6 + i}:00`); // Hours from 6 AM to 8 PM
-
-let currentDate = new Date(); // Start with today's date
-
-// Helper function to get the start of the current week (Monday)
-const getStartOfWeek = (date) => {
-  const day = date.getDay(),
-        diff = date.getDate() - day + (day == 0 ? -6 : 1); // Adjust so Monday is the first day
-  return new Date(date.setDate(diff));
+// Get mouse/touch position relative to canvas
+function getPos(e){
+    const rect = canvas.getBoundingClientRect();
+    if(e.touches){
+        return {
+            x: e.touches[0].clientX - rect.left,
+            y: e.touches[0].clientY - rect.top
+        };
+    } else {
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
 }
 
-// Helper function to format date as "Week of [Date]"
-const formatWeekTitle = (date) => {
-  const startOfWeek = getStartOfWeek(new Date(date));
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  return `Week of ${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`;
+// Start drawing
+function startDrawing(e){
+    drawing = true;
+    const pos = getPos(e);
+    lastX = pos.x;
+    lastY = pos.y;
+}
+
+// Draw line
+function draw(e){
+    if(!drawing) return;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = erasing ? "#fff" : penColor;
+    ctx.lineWidth = penSize;
+    ctx.lineCap = "round";
+    ctx.stroke();
+    lastX = pos.x;
+    lastY = pos.y;
+}
+
+// Stop drawing
+function stopDrawing(){
+    drawing = false;
+    lastX = 0;
+    lastY = 0;
+}
+
+// Canvas event listeners
+canvas.addEventListener("mousedown", startDrawing);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("mouseup", stopDrawing);
+canvas.addEventListener("mouseout", stopDrawing);
+
+canvas.addEventListener("touchstart", startDrawing);
+canvas.addEventListener("touchmove", draw);
+canvas.addEventListener("touchend", stopDrawing);
+
+// Resize canvas to match calendar wrapper
+function resizeCanvas(){
+    const wrapper = document.getElementById("calendar-wrapper");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = wrapper.offsetWidth * dpr;
+    canvas.height = wrapper.offsetHeight * dpr;
+    canvas.style.width = wrapper.offsetWidth + "px";
+    canvas.style.height = wrapper.offsetHeight + "px";
+    ctx.scale(dpr, dpr);
+    loadCanvas();
+}
+
+// Toolbar controls
+document.getElementById("pen-btn").addEventListener("click", ()=>{
+    erasing = false;
+});
+document.getElementById("eraser-btn").addEventListener("click", ()=>{
+    erasing = true;
+});
+document.getElementById("color-picker").addEventListener("change", (e)=>{
+    penColor = e.target.value;
+});
+document.getElementById("size-picker").addEventListener("change", (e)=>{
+    penSize = e.target.value;
+});
+document.getElementById("clear-btn").addEventListener("click", ()=>{
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+});
+
+// Save/Load
+function saveCanvas(){
+    localStorage.setItem(currentWeekKey(), canvas.toDataURL());
+}
+function loadCanvas(){
+    const data = localStorage.getItem(currentWeekKey());
+    if(data){
+        const img = new Image();
+        img.onload = ()=> ctx.drawImage(img,0,0,canvas.width/ (window.devicePixelRatio||1),canvas.height/ (window.devicePixelRatio||1));
+        img.src = data;
+    }
+}
+
+// --- Calendar Functions ---
+let currentDate = new Date();
+
+function getStartOfWeek(date){
+    const day = date.getDay(); // Sunday = 0
+    const diff = (day === 0 ? -6 : 1 - day); // Monday start
+    const start = new Date(date);
+    start.setDate(date.getDate() + diff);
+    start.setHours(0,0,0,0);
+    return start;
+}
+
+function renderCalendar(date){
+    const startOfWeek = getStartOfWeek(date);
+
+    // Update current week text
+    const weekStr = `${startOfWeek.toLocaleDateString()} - ${new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate()+6).toLocaleDateString()}`;
+    document.getElementById("current-week").textContent = weekStr;
+
+    // Day headers
+    const dayHeader = document.getElementById("day-header");
+    dayHeader.innerHTML = "";
+    for(let i=0;i<7;i++){
+        const day = new Date(startOfWeek);
+        day.setDate(startOfWeek.getDate() + i);
+        const div = document.createElement("div");
+        div.style.flex = "1";
+        div.style.textAlign = "center";
+        div.textContent = day.toLocaleDateString(undefined,{weekday:'short',month:'numeric',day:'numeric'});
+        dayHeader.appendChild(div);
+    }
+
+    // Hour column
+    const hourColumn = document.getElementById("hour-column");
+    hourColumn.innerHTML = "";
+    for(let h=6;h<=22;h++){
+        const div = document.createElement("div");
+        div.className = "hour-cell";
+    if (h === 21 || h === 22) {
+        div.textContent = "Hours";
+    } else {
+        div.textContent = h <= 12 ? h + (h === 12 ? 'pm' : 'am') : (h - 12) + 'pm';
+    }
+        div.style.height = "30px";
+        div.style.lineHeight = "30px";
+        div.style.textAlign = "center";
+        hourColumn.appendChild(div);
+    }
+
+    // Calendar grid
+    const calendarGrid = document.getElementById("calendar");
+    calendarGrid.innerHTML = "";
+    for(let h=6;h<=22;h++){
+        for(let d=0;d<7;d++){
+            const div = document.createElement("div");
+            div.className = "day-column hour-cell";
+            calendarGrid.appendChild(div);
+        }
+    }
+
+    // Resize canvas AFTER calendar DOM built
+    resizeCanvas();
+}
+
+// Week navigation
+document.getElementById("prev-week-btn").addEventListener("click", ()=>{
+    currentDate.setDate(currentDate.getDate()-7);
+    renderCalendar(currentDate);
+});
+document.getElementById("next-week-btn").addEventListener("click", ()=>{
+    currentDate.setDate(currentDate.getDate()+7);
+    renderCalendar(currentDate);
+});
+
+function currentWeekKey(){
+    const startOfWeek = getStartOfWeek(currentDate);
+    return `week-${startOfWeek.getFullYear()}-${startOfWeek.getMonth()}-${startOfWeek.getDate()}`;
+}
+
+// Save button
+document.getElementById("save-btn").addEventListener("click", saveCanvas);
+
+// Initial render
+window.onload = ()=>{
+    renderCalendar(currentDate);
 };
-
-// Helper function to render the calendar
-const renderCalendar = (startDate) => {
-  const weekStart = getStartOfWeek(new Date(startDate));
-  const weekTitle = formatWeekTitle(weekStart);
-
-  // Update week title
-  const currentWeekTitle = document.getElementById('current-week');
-  if (currentWeekTitle) {
-    currentWeekTitle.innerText = `Week of: ${weekTitle}`;
-  }
-
-  // Get calendar container and ensure it exists
-  const calendarContainer = document.getElementById('calendar');
-  if (!calendarContainer) {
-    console.error('Calendar container not found');
-    return;
-  }
-
-  // Clear existing calendar content
-  calendarContainer.innerHTML = '';
-
-  // Render the calendar grid
-  daysOfWeek.forEach((day, index) => {
-    const dayColumn = document.createElement('div');
-    dayColumn.classList.add('day-column');
-
-    const currentDay = new Date(weekStart);
-    currentDay.setDate(weekStart.getDate() + index);
-
-    // Render time slots for each day
-    hours.forEach((hour) => {
-      const timeSlot = document.createElement('div');
-      timeSlot.classList.add('time-slot');
-      timeSlot.dataset.day = day;
-      timeSlot.dataset.hour = hour;
-      
-      const noteArea = document.createElement('div');
-      noteArea.classList.add('note-area');
-      timeSlot.appendChild(noteArea);
-
-      dayColumn.appendChild(timeSlot);
-    });
-
-    calendarContainer.appendChild(dayColumn);
-  });
-};
-
-// Navigate to the previous week
-document.getElementById('prev-week-btn').addEventListener('click', () => {
-  currentDate.setDate(currentDate.getDate() - 7);
-  renderCalendar(currentDate);
-});
-
-// Navigate to the next week
-document.getElementById('next-week-btn').addEventListener('click', () => {
-  currentDate.setDate(currentDate.getDate() + 7);
-  renderCalendar(currentDate);
-});
-
-// Save notes to Firestore
-document.getElementById('save-btn').addEventListener('click', () => {
-  const notes = [];
-  document.querySelectorAll('.note-area').forEach(area => {
-    notes.push(area.innerText);
-  });
-
-  db.collection('weeklyNotes').add({
-    notes: notes,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-  })
-  .then(() => {
-    alert('Notes saved!');
-  })
-  .catch((error) => {
-    console.error('Error saving notes: ', error);
-  });
-});
-
-// Load the initial calendar
-window.onload = () => renderCalendar(currentDate);
+window.addEventListener("resize", resizeCanvas);

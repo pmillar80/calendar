@@ -3,29 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Handwritten Weekly Calendar</title>
-  <link rel="manifest" href="manifest.json">
+  <title>Handwriting Weekly Calendar</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-firestore.js"></script>
 </head>
 <body>
   <div id="app">
+
     <header>
       <h1>Weekly Planner</h1>
       <div id="week-navigation">
         <button id="prev-week-btn">← Previous</button>
-        <span id="current-week">Week of: </span>
+        <span id="current-week"></span>
         <button id="next-week-btn">Next →</button>
       </div>
     </header>
-    <div id="calendar"></div>
+
+    <div id="calendar-wrapper">
+      <div id="top-left-corner"></div>
+      <div id="day-header"></div>
+      <div id="hour-column"></div>
+      <div id="calendar"></div>
+
+      <!-- Handwriting canvas overlay -->
+      <canvas id="handwriting-canvas"></canvas>
+    </div>
+
+    <div id="toolbar">
+      <button id="pen-btn">Pen</button>
+      <button id="eraser-btn">Eraser</button>
+      <input type="color" id="color-picker" value="#000000">
+      <input type="range" id="size-picker" min="1" max="10" value="2">
+      <button id="clear-btn">Clear</button>
+    </div>
+
     <button id="save-btn">Save Notes</button>
+
   </div>
 
-  <!-- Now we place the script here to ensure DOM is fully loaded before execution -->
   <script src="app.js"></script>
-  <script src="service-worker.js"></script>
 </body>
 </html>
