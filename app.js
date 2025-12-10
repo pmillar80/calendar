@@ -66,6 +66,10 @@ canvas.addEventListener("touchstart", startDrawing);
 canvas.addEventListener("touchmove", draw);
 canvas.addEventListener("touchend", stopDrawing);
 
+canvas.addEventListener("touchstart", (e) => e.preventDefault(), { passive: false });
+canvas.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
+canvas.addEventListener("touchend", (e) => e.preventDefault(), { passive: false });
+
 // Resize canvas to match calendar wrapper
 function resizeCanvas(){
     const wrapper = document.getElementById("calendar-wrapper");
